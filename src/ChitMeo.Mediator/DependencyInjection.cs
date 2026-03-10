@@ -12,9 +12,24 @@ public static class DependencyInjection
 
         const string modulePrefix = ".Module.";
 
-        var assemblies = Directory
-            .GetFiles(AppContext.BaseDirectory, $"*{modulePrefix}*.dll")
-            .Select(path => Assembly.Load(AssemblyName.GetAssemblyName(path)))
+        // Load assemblies from disk (normal publish)
+        var files = Directory.GetFiles(AppContext.BaseDirectory, $"*{modulePrefix}*.dll");
+
+        foreach (var file in files)
+        {
+            try
+            {
+                Assembly.Load(AssemblyName.GetAssemblyName(file));
+            }
+            catch
+            {
+            }
+        }
+
+        // Scan loaded assemblies (works with SingleFile)
+        var assemblies = AppDomain.CurrentDomain
+            .GetAssemblies()
+            .Where(a => a.GetName().Name!.Contains(modulePrefix))
             .ToArray();
 
         foreach (var assembly in assemblies)
