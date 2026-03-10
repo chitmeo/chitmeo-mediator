@@ -1,14 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ChitMeo.Module.Example\ChitMeo.Module.Example.csproj" />
+    <ProjectReference Include="..\..\src\ChitMeo.Mediator\ChitMeo.Mediator.csproj" />
   </ItemGroup>
 
 </Project>

@@ -38,7 +38,7 @@ public class Mediator : IMediator
 
         var handler = _serviceProvider.GetRequiredService(handlerType);
 
-        var result = method.Invoke(handler, new object[] { request, cancellationToken });
+        var result = method.Invoke(handler, [request, cancellationToken]);
 
         return await (Task<TResponse>)result!;
     }

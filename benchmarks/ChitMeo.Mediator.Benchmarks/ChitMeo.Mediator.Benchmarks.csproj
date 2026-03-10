@@ -8,7 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ChitMeo.Module.Example\ChitMeo.Module.Example.csproj" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ChitMeo.Mediator\ChitMeo.Mediator.csproj" />
   </ItemGroup>
 
 </Project>
