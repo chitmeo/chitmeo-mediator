@@ -1,38 +1,42 @@
 ﻿using System;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ChitMeo.Mediator
+namespace ChitMeo.Mediator;
+
+public class Mediator : IMediator
 {
-    public class Mediator : IMediator
+    private readonly IServiceProvider _serviceProvider;
+
+    public Mediator(IServiceProvider serviceProvider)
     {
-        private readonly Func<Type, object> _resolver;
+        _serviceProvider = serviceProvider;
+    }
 
-        public Mediator(Func<Type, object> resolver)
+    public async Task<TResponse> SendAsync<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)
+    {
+        if (request == null)
         {
-            _resolver = resolver;
+            throw new ArgumentNullException(nameof(request));
         }
 
-        public Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)
+        Type handlerType = typeof(IRequestHandler<,>)
+            .MakeGenericType(request.GetType(), typeof(TResponse));
+
+        var handler = _serviceProvider.GetService(handlerType);
+        if (handler == null)
+            throw new InvalidOperationException($"No handler registered for {request.GetType().Name}");
+
+        MethodInfo? method = handlerType.GetMethod("HandleAsync");
+        if (method == null)
+            throw new InvalidOperationException($"Method 'HandleAsync' not found on {handlerType.Name}");
+
+        var result = method.Invoke(handler, [request, cancellationToken]);
+        if (result is Task<TResponse> task)
         {
-            var requestType = request.GetType();
-
-            var handlerType = typeof(IRequestHandler<,>)
-                .MakeGenericType(requestType, typeof(TResponse));
-
-            var handler = _resolver(handlerType);
-
-            if (handler == null)
-            {
-                throw new InvalidOperationException(
-                    $"Handler not found for {requestType.Name}");
-            }
-
-            var method = handlerType.GetMethod("Handle");
-
-            return (Task<TResponse>)method.Invoke(
-                handler,
-                new object[] { request, cancellationToken });
+            return await task;
         }
+        throw new InvalidOperationException($"Handler method did not return Task<{typeof(TResponse).Name}>");
     }
 }

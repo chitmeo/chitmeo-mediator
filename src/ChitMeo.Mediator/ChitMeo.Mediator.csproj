@@ -1,8 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>net8.0;net9.0</TargetFrameworks>
-
+		<TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
 		<PackageId>ChitMeo.Mediator</PackageId>
 		<Version>1.0.0</Version>
 		<Authors>Kyle Nguyen</Authors>
@@ -17,10 +18,8 @@
 		<RepositoryUrl>
 			https://github.com/chitmeo/chitmeo-mediator
 		</RepositoryUrl>
-
-
 	</PropertyGroup>
-	<ItemGroup>
-		
+	 <ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
 	</ItemGroup>
 </Project>
