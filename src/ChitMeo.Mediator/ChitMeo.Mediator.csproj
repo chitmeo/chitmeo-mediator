@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+
+		<PackageId>ChitMeo.Mediator</PackageId>
+		<Version>1.0.0</Version>
+		<Authors>Kyle Nguyen</Authors>
+		<Company>ChitMeo</Company>
+
+		<Description>
+			Lightweight mediator pattern implementation for .NET applications.
+		</Description>
+
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageTags>mediator;design-pattern;dotnet;dependency-injection</PackageTags>
+		<RepositoryUrl>
+			https://github.com/chitmeo/chitmeo-mediator
+		</RepositoryUrl>
+
+
+	</PropertyGroup>
+	<ItemGroup>
+		
+	</ItemGroup>
+</Project>

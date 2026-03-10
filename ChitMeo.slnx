@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ChitMeo.Mediator/ChitMeo.Mediator.csproj" />
+  </Folder>
+  <Project Path="samples/Chitmeo.Examples.Console/Chitmeo.Examples.Console.csproj" Id="364a5479-42cd-40bd-b195-a6af161f997f" />
+</Solution>
