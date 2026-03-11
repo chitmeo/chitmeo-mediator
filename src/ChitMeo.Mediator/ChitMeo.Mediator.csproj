@@ -4,22 +4,22 @@
 		<TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<PackageId>ChitMeo.Mediator</PackageId>
+		<PackageId>ChitMeo</PackageId>
 		<Version>1.0.0</Version>
-		<Authors>Kyle Nguyen</Authors>
+		<Authors>Dev</Authors>
 		<Company>ChitMeo</Company>
-
-		<Description>
-			Lightweight mediator pattern implementation for .NET applications.
-		</Description>
-
+		<Copyright>Copyright ChitMeo.com</Copyright>
+		<Description>Simple mediator for modular .NET applications.</Description>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<PackageTags>mediator;design-pattern;dotnet;dependency-injection</PackageTags>
-		<RepositoryUrl>
-			https://github.com/chitmeo/chitmeo-mediator
-		</RepositoryUrl>
+		<PackageTags>mediator cqrs modular architecture dependency-injection</PackageTags>
+		<SignAssembly>true</SignAssembly>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<RepositoryUrl>https://github.com/chitmeo/chitmeo-mediator</RepositoryUrl>
 	</PropertyGroup>
-	 <ItemGroup>
+	<ItemGroup>
+		<None Include="..\..\README.md" Pack="true" PackagePath="\" />
+	</ItemGroup>
+	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
 	</ItemGroup>
 </Project>

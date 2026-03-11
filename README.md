@@ -1,90 +1,160 @@
-# ChitMeo.Mediator
+# ChitMeoMediator
 
-ChitMeo.Mediator is a lightweight implementation of the Mediator design pattern for .NET.
+**ChitMeoMediator** - Simple mediator for modular .NET applications.
+ChitMeoMediator is a lightweight mediator implementation for .NET designed to be simple, dependency-free, and easy to extend.
+It implements the **Mediator pattern** commonly used in CQRS architectures while keeping the codebase minimal and transparent.
 
-It helps decouple components in your application by allowing objects to communicate
-through a mediator instead of referencing each other directly.
+## Features
 
-This library is framework-agnostic and can be used with:
-
-- ASP.NET Core Web API
-- ASP.NET MVC
-- Blazor
-- Console applications
-- Background services
-
-Inspired by the Mediator pattern described at refactoring.guru.
-
----
+* Lightweight and dependency-free
+* Automatic handler discovery
+* Seamless integration with `Microsoft.Extensions.DependencyInjection`
+* Designed for modular monolith architectures
+* Minimal reflection usage
+* Easy to extend with pipelines and behaviors
 
 ## Installation
 
-Install via NuGet:
-```
-dotnet add package ChitMeo.Mediator
-```
+Install from NuGet:
 
----
-
-## Basic Idea
-
-Instead of components talking directly to each other:
 ```
-Controller → Service → Repository
+dotnet add package ChitMeoMediator
 ```
 
-They communicate through a mediator:
-```
-Controller → Mediator → Handler
-```
+## Quick Start
 
-This reduces coupling and improves maintainability.
-
----
-
-## Example
-
-### Request
+### 1. Register ChitMeoMediator
 
 ```csharp
-public record GetUserQuery(int Id);
-//Handler
-public class GetUserHandler : IRequestHandler<GetUserQuery, User>
+builder.Services.AddMediator();
+```
+
+`AddMediator()` automatically scans assemblies containing `.Module.` in their name and registers request handlers.
+
+---
+
+### 2. Create a Request
+
+```csharp
+public class Ping : IRequest<string>
 {
-    public Task<User> Handle(GetUserQuery request)
+}
+```
+
+---
+
+### 3. Create a Handler
+
+```csharp
+public class PingHandler : IRequestHandler<Ping, string>
+{
+    public Task<string> HandleAsync(Ping request, CancellationToken cancellationToken)
     {
-        // handle logic
+        return Task.FromResult("Pong");
     }
 }
 ```
-Usage
+
+---
+
+### 4. Send Request
+
+```csharp
+var result = await mediator.SendAsync(new Ping());
+
+Console.WriteLine(result); // Pong
 ```
-var result = await mediator.Send(new GetUserQuery(1));
+
+---
+
+## Interfaces
+
+### IRequest
+
+Represents a request expecting a response.
+
+```csharp
+public interface IRequest<TResponse>
+{
+}
 ```
 
-# Why ChitMeo.Mediator?
+---
 
-1. Lightweight
+### IRequestHandler
 
-2. No heavy dependencies
+Handles a specific request.
 
-3. Simple API
+```csharp
+public interface IRequestHandler<TRequest, TResponse>
+{
+    Task<TResponse> HandleAsync(TRequest request, CancellationToken cancellationToken);
+}
+```
 
-4. Works with any .NET project
+---
 
-5. Easy to understand and extend
+### IMediator
 
-# Use Cases
+Sends requests to their handlers.
 
-1. API request handling
+```csharp
+public interface IMediator
+{
+    Task<TResponse> SendAsync<TResponse>(
+        IRequest<TResponse> request,
+        CancellationToken cancellationToken = default);
+}
+```
 
-2. CQRS style architecture
+---
 
-3. Decoupling services
+## Assembly Scanning
 
-4. Blazor component communication
+ChitMeoMediator automatically discovers handlers in assemblies that match:
 
-5. Clean architecture
+```
+*.Module.*.dll
+```
 
-# Roadmap
-TBD
+Example:
+
+```
+MyApp.Module.Users
+MyApp.Module.Orders
+```
+
+This allows a **modular monolith architecture** where each module contains its own handlers.
+
+---
+
+## Performance
+
+ChitMeoMediator focuses on simplicity while maintaining excellent performance.
+
+Example benchmark:
+
+| Method          | Mean    |
+| --------------- | ------- |
+| Direct call     | ~21 ns  |
+| ChitMeoMediator | ~135 ns |
+
+The overhead is minimal and suitable for most applications.
+
+---
+
+## Roadmap
+
+Possible future features:
+
+* Pipeline behaviors
+* Notification handlers
+* Source generator optimization
+* Request caching
+* Transaction pipeline
+
+---
+
+## License
+
+MIT
