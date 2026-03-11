@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ChitMeo.Mediator/ChitMeo.Mediator.csproj" />
+  </Folder>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/ChitMeo.Mediator.Benchmarks/ChitMeo.Mediator.Benchmarks.csproj" Id="127f0362-88a6-49bb-963d-3d3333d550ae" />
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/Chitmeo.Examples.Console/Chitmeo.Examples.Console.csproj" />
+    <Project Path="samples/ChitMeo.Module.Example/ChitMeo.Module.Example.csproj" Id="e558457c-e45a-45c7-b23d-76cf0b384aa6" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/ChitMeo.Mediator.Tests/ChitMeo.Mediator.Tests.csproj" />
+  </Folder>
+
+</Solution>
