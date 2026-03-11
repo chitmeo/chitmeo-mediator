@@ -1,7 +1,7 @@
-# ChitMeoMediator
+# ChitMeo.Mediator
 
-**ChitMeoMediator** - Simple mediator for modular .NET applications.
-ChitMeoMediator is a lightweight mediator implementation for .NET designed to be simple, dependency-free, and easy to extend.
+**ChitMeo.Mediator** - Simple mediator for modular .NET applications.
+ChitMeo.Mediator is a lightweight mediator implementation for .NET designed to be simple, dependency-free, and easy to extend.
 It implements the **Mediator pattern** commonly used in CQRS architectures while keeping the codebase minimal and transparent.
 
 ## Features
@@ -18,12 +18,12 @@ It implements the **Mediator pattern** commonly used in CQRS architectures while
 Install from NuGet:
 
 ```
-dotnet add package ChitMeoMediator
+dotnet add package ChitMeo.Mediator
 ```
 
 ## Quick Start
 
-### 1. Register ChitMeoMediator
+### 1. Register ChitMeo.Mediator
 
 ```csharp
 builder.Services.AddMediator();
@@ -111,7 +111,7 @@ public interface IMediator
 
 ## Assembly Scanning
 
-ChitMeoMediator automatically discovers handlers in assemblies that match:
+ChitMeo.Mediator automatically discovers handlers in assemblies that match:
 
 ```
 *.Module.*.dll
@@ -130,14 +130,14 @@ This allows a **modular monolith architecture** where each module contains its o
 
 ## Performance
 
-ChitMeoMediator focuses on simplicity while maintaining excellent performance.
+ChitMeo.Mediator focuses on simplicity while maintaining excellent performance.
 
 Example benchmark:
 
 | Method          | Mean    |
 | --------------- | ------- |
 | Direct call     | ~21 ns  |
-| ChitMeoMediator | ~135 ns |
+| ChitMeo.Mediator | ~135 ns |
 
 The overhead is minimal and suitable for most applications.
 
