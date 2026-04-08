@@ -1,5 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
-using ChitMeo.Mediator;
+﻿using ChitMeo.Mediator;
 using ChitMeo.Module.Example;
 
 using Microsoft.Extensions.DependencyInjection;

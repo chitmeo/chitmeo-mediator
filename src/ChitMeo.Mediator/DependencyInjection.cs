@@ -4,8 +4,16 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace ChitMeo.Mediator;
 
+/// <summary>
+/// Provides extension methods for configuring mediator services in the dependency injection container.
+/// </summary>
 public static class DependencyInjection
 {
+    /// <summary>
+    /// Adds the mediator services to the dependency injection container.
+    /// </summary>
+    /// <param name="services">The service collection to add mediator services to.</param>
+    /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddMediator(this IServiceCollection services)
     {
         services.TryAddScoped<IMediator, Mediator>();
