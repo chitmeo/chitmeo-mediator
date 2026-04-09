@@ -8,6 +8,7 @@ public class HelloHandler : IRequestHandler<HelloRequest, string>
         HelloRequest request,
         CancellationToken cancellationToken)
     {
-        return Task.FromResult("Hello ChitMeo Mediator");
+        System.Console.WriteLine("Handling HelloRequest");
+        return Task.FromResult("");
     }
 }

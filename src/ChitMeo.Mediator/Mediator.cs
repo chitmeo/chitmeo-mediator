@@ -11,8 +11,7 @@ public class Mediator : IMediator
 {
     private readonly IServiceProvider _serviceProvider;
 
-    private static readonly ConcurrentDictionary<Type, (Type handlerType, MethodInfo method)>
-        _cache = new();
+    private static readonly ConcurrentDictionary<Type, (Type handlerType, MethodInfo handlerMethod, Type behaviorType, MethodInfo behaviorMethod)> _cache = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Mediator"/> class.
@@ -24,7 +23,7 @@ public class Mediator : IMediator
     }
 
     /// <summary>
-    /// Sends a request to be handled asynchronously and returns the response.
+    /// Sends a request through the behavior pipeline and then to its handler, returning the response.
     /// </summary>
     /// <typeparam name="TResponse">The type of the response returned by the handler.</typeparam>
     /// <param name="request">The request to send.</param>
@@ -41,21 +40,44 @@ public class Mediator : IMediator
 
         var requestType = request.GetType();
 
-        var (handlerType, method) = _cache.GetOrAdd(requestType, t =>
+        var (handlerType, handlerMethod, behaviorType, behaviorMethod) = _cache.GetOrAdd(requestType, t =>
         {
             var hType = typeof(IRequestHandler<,>)
                 .MakeGenericType(t, typeof(TResponse));
 
-            var m = hType.GetMethod("HandleAsync")
-                ?? throw new InvalidOperationException("HandleAsync not found");
+            var hMethod = hType.GetMethod("HandleAsync")
+                ?? throw new InvalidOperationException($"HandleAsync not found on {hType}");
 
-            return (hType, m);
+            var bType = typeof(IPipelineBehavior<,>)
+                .MakeGenericType(t, typeof(TResponse));
+
+            var bMethod = bType.GetMethod("HandleAsync")
+                ?? throw new InvalidOperationException($"HandleAsync not found on {bType}");
+
+            return (hType, hMethod, bType, bMethod);
         });
 
         var handler = _serviceProvider.GetRequiredService(handlerType);
 
-        var result = method.Invoke(handler, [request, cancellationToken]);
+        // Build the innermost delegate: the actual handler invocation.
+        RequestHandlerDelegate<TResponse> handlerDelegate = () => (Task<TResponse>)handlerMethod.Invoke(handler, [request, cancellationToken])!;
 
-        return await (Task<TResponse>)result!;
+        // Resolve all registered behaviors and wrap them around the handler delegate,
+        // last-registered behavior executes outermost (first in the chain).
+        var behaviors = _serviceProvider
+            .GetServices(behaviorType)
+            .Reverse()
+            .ToList();
+
+        var pipeline = behaviors.Aggregate(
+            handlerDelegate,
+            (next, behavior) =>
+            {
+                var capturedNext = next;
+                return () => (Task<TResponse>)behaviorMethod.Invoke(
+                    behavior, [request, capturedNext, cancellationToken])!;
+            });
+
+        return await pipeline();
     }
 }
