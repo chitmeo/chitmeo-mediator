@@ -11,7 +11,7 @@ It implements the **Mediator pattern** commonly used in CQRS architectures while
 * Seamless integration with `Microsoft.Extensions.DependencyInjection`
 * Designed for modular monolith architectures
 * Minimal reflection usage
-* Easy to extend with pipelines and behaviors
+* Easy to extend with pipeline behaviors
 
 ## Installation
 
@@ -30,6 +30,15 @@ builder.Services.AddMediator();
 ```
 
 `AddMediator()` automatically scans assemblies containing `.Module.` in their name and registers request handlers.
+
+You can customize the module prefix:
+
+```csharp
+builder.Services.AddMediator(opt =>
+{
+    opt.ModulePrefix = ".Feature";
+});
+```
 
 ---
 
@@ -63,6 +72,102 @@ public class PingHandler : IRequestHandler<Ping, string>
 var result = await mediator.SendAsync(new Ping());
 
 Console.WriteLine(result); // Pong
+```
+
+---
+
+## Pipeline Behaviors
+
+Pipeline behaviors allow you to intercept requests before and after the handler executes — useful for cross-cutting concerns such as logging, validation, caching, or transactions.
+
+### How it works
+
+Behaviors wrap around the handler in the order they are registered. The first registered behavior runs outermost (first in, last out):
+
+```
+Request → Behavior 1 → Behavior 2 → Handler → Behavior 2 → Behavior 1 → Response
+```
+
+---
+
+### 1. Implement IPipelineBehavior
+
+```csharp
+public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+    where TRequest : IRequest<TResponse>
+{
+    public async Task<TResponse> HandleAsync(
+        TRequest request,
+        RequestHandlerDelegate<TResponse> next,
+        CancellationToken cancellationToken)
+    {
+        Console.WriteLine($"Handling {typeof(TRequest).Name}");
+
+        var response = await next(); // invoke the next behavior or handler
+
+        Console.WriteLine($"Handled {typeof(TRequest).Name}");
+
+        return response;
+    }
+}
+```
+
+---
+
+### 2. Register the Behavior
+
+Register using the open generic to apply the behavior to **all requests**:
+
+```csharp
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
+```
+
+Or register using the closed generic to apply only to a **specific request**:
+
+```csharp
+builder.Services.AddTransient<IPipelineBehavior<Ping, string>, LoggingBehavior<Ping, string>>();
+```
+
+---
+
+### 3. Multiple Behaviors
+
+Multiple behaviors are executed in registration order:
+
+```csharp
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+```
+
+Execution order:
+
+```
+Request → LoggingBehavior → ValidationBehavior → Handler
+                                                     ↓
+Response ← LoggingBehavior ← ValidationBehavior ←───┘
+```
+
+---
+
+### Example: Validation Behavior
+
+```csharp
+public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+    where TRequest : IRequest<TResponse>
+{
+    public async Task<TResponse> HandleAsync(
+        TRequest request,
+        RequestHandlerDelegate<TResponse> next,
+        CancellationToken cancellationToken)
+    {
+        // Pre-handler: validate the request
+        if (request is null)
+            throw new ArgumentNullException(nameof(request));
+
+        // Continue down the pipeline
+        return await next();
+    }
+}
 ```
 
 ---
@@ -109,6 +214,23 @@ public interface IMediator
 
 ---
 
+### IPipelineBehavior
+
+Intercepts requests in the pipeline.
+
+```csharp
+public interface IPipelineBehavior<TRequest, TResponse>
+    where TRequest : IRequest<TResponse>
+{
+    Task<TResponse> HandleAsync(
+        TRequest request,
+        RequestHandlerDelegate<TResponse> next,
+        CancellationToken cancellationToken);
+}
+```
+
+---
+
 ## Assembly Scanning
 
 ChitMeo.Mediator automatically discovers handlers in assemblies that match:
@@ -134,10 +256,10 @@ ChitMeo.Mediator focuses on simplicity while maintaining excellent performance.
 
 Example benchmark:
 
-| Method          | Mean    |
-| --------------- | ------- |
-| Direct call     | ~21 ns  |
-| ChitMeo.Mediator | ~135 ns |
+| Method            | Mean    |
+| ----------------- | ------- |
+| Direct call       | ~21 ns  |
+| ChitMeo.Mediator  | ~135 ns |
 
 The overhead is minimal and suitable for most applications.
 
@@ -147,7 +269,6 @@ The overhead is minimal and suitable for most applications.
 
 Possible future features:
 
-* Pipeline behaviors
 * Notification handlers
 * Source generator optimization
 * Request caching
