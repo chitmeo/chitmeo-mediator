@@ -9,7 +9,9 @@ public class MediatorBenchmark
 {
     private IMediator _mediator = null!;
     private PingHandler _handler = null!;
+    private PingNotificationHandler _notificationHandler = null!;
     private Ping _request = new();
+    private PingNotification _notification = new();
 
     [GlobalSetup]
     public void Setup()
@@ -19,11 +21,13 @@ public class MediatorBenchmark
         services.AddMediator();
 
         services.AddScoped<IRequestHandler<Ping, string>, PingHandler>();
+        services.AddScoped<INotificationHandler<PingNotification>, PingNotificationHandler>();
 
         var provider = services.BuildServiceProvider();
 
         _mediator = provider.GetRequiredService<IMediator>();
         _handler = new PingHandler();
+        _notificationHandler = new PingNotificationHandler();
     }
 
     [Benchmark]
@@ -33,9 +37,21 @@ public class MediatorBenchmark
     }
 
     [Benchmark]
+    public async Task Mediator_Publish()
+    {
+        await _mediator.PublishAsync(_notification);
+    }
+
+    [Benchmark]
     public async Task<string> Direct_Call()
     {
         return await _handler.HandleAsync(_request, default);
+    }
+
+    [Benchmark]
+    public async Task Direct_Notification_Call()
+    {
+        await _notificationHandler.HandleAsync(_notification, default);
     }
 
     [Benchmark]
