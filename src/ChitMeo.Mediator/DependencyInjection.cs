@@ -78,7 +78,8 @@ public static class DependencyInjection
                 .SelectMany(t => t.GetInterfaces()
                     .Where(i =>
                         i.IsGenericType &&
-                        i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>))
+                        (i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>) ||
+                         i.GetGenericTypeDefinition() == typeof(INotificationHandler<>)))
                     .Select(i => new
                     {
                         Service = i,

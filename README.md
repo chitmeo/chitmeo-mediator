@@ -7,11 +7,12 @@ It implements the **Mediator pattern** commonly used in CQRS architectures while
 ## Features
 
 * Lightweight and dependency-free
-* Automatic handler discovery
+* Automatic request and notification handler discovery
 * Seamless integration with `Microsoft.Extensions.DependencyInjection`
 * Designed for modular monolith architectures
 * Minimal reflection usage
 * Easy to extend with pipeline behaviors
+* Publish/subscribe notifications via `PublishAsync`
 
 ## Installation
 
@@ -29,7 +30,7 @@ dotnet add package ChitMeo.Mediator
 builder.Services.AddMediator();
 ```
 
-`AddMediator()` automatically scans assemblies containing `.Module.` in their name and registers request handlers.
+`AddMediator()` automatically scans assemblies containing `.Module.` in their name and registers both request handlers and notification handlers.
 
 You can customize the module prefix:
 
@@ -73,6 +74,42 @@ var result = await mediator.SendAsync(new Ping());
 
 Console.WriteLine(result); // Pong
 ```
+
+---
+
+### 5. Create a Notification
+
+```csharp
+public class PingPublished : INotification
+{
+    public string? Message { get; init; }
+}
+```
+
+---
+
+### 6. Create a Notification Handler
+
+```csharp
+public class PingPublishedHandler : INotificationHandler<PingPublished>
+{
+    public Task HandleAsync(PingPublished notification, CancellationToken cancellationToken)
+    {
+        Console.WriteLine($"{notification.Message} published");
+        return Task.CompletedTask;
+    }
+}
+```
+
+---
+
+### 7. Publish a Notification
+
+```csharp
+await mediator.PublishAsync(new PingPublished { Message = "Ping" });
+```
+
+All registered handlers for the notification type are resolved and invoked when `PublishAsync` is called.
 
 ---
 
@@ -199,9 +236,35 @@ public interface IRequestHandler<TRequest, TResponse>
 
 ---
 
+### INotification
+
+Represents a message that can be broadcast to multiple handlers.
+
+```csharp
+public interface INotification
+{
+}
+```
+
+---
+
+### INotificationHandler
+
+Handles a specific notification.
+
+```csharp
+public interface INotificationHandler<in TNotification>
+    where TNotification : INotification
+{
+    Task HandleAsync(TNotification notification, CancellationToken cancellationToken);
+}
+```
+
+---
+
 ### IMediator
 
-Sends requests to their handlers.
+Sends requests to their handlers and publishes notifications to all matching handlers.
 
 ```csharp
 public interface IMediator
@@ -209,6 +272,11 @@ public interface IMediator
     Task<TResponse> SendAsync<TResponse>(
         IRequest<TResponse> request,
         CancellationToken cancellationToken = default);
+
+    Task PublishAsync<TNotification>(
+        TNotification notification,
+        CancellationToken cancellationToken = default)
+        where TNotification : INotification;
 }
 ```
 
@@ -233,7 +301,7 @@ public interface IPipelineBehavior<TRequest, TResponse>
 
 ## Assembly Scanning
 
-ChitMeo.Mediator automatically discovers handlers in assemblies that match:
+ChitMeo.Mediator automatically discovers both request handlers and notification handlers in assemblies that match:
 
 ```
 *.Module.*.dll
@@ -246,7 +314,7 @@ MyApp.Module.Users
 MyApp.Module.Orders
 ```
 
-This allows a **modular monolith architecture** where each module contains its own handlers.
+This allows a **modular monolith architecture** where each module can contain its own requests, notifications, and handlers.
 
 ---
 
@@ -269,7 +337,6 @@ The overhead is minimal and suitable for most applications.
 
 Possible future features:
 
-* Notification handlers
 * Source generator optimization
 * Request caching
 * Transaction pipeline

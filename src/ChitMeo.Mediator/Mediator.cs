@@ -11,7 +11,8 @@ public class Mediator : IMediator
 {
     private readonly IServiceProvider _serviceProvider;
 
-    private static readonly ConcurrentDictionary<Type, (Type handlerType, MethodInfo handlerMethod, Type behaviorType, MethodInfo behaviorMethod)> _cache = new();
+    private static readonly ConcurrentDictionary<Type, (Type handlerType, MethodInfo handlerMethod, Type behaviorType, MethodInfo behaviorMethod)> _requestHandlerCache = new();
+    private static readonly ConcurrentDictionary<Type, (Type handlerType, MethodInfo handlerMethod)> _notificationCache = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Mediator"/> class.
@@ -40,7 +41,7 @@ public class Mediator : IMediator
 
         var requestType = request.GetType();
 
-        var (handlerType, handlerMethod, behaviorType, behaviorMethod) = _cache.GetOrAdd(requestType, t =>
+        var (handlerType, handlerMethod, behaviorType, behaviorMethod) = _requestHandlerCache.GetOrAdd(requestType, t =>
         {
             var hType = typeof(IRequestHandler<,>)
                 .MakeGenericType(t, typeof(TResponse));
@@ -79,5 +80,35 @@ public class Mediator : IMediator
             });
 
         return await pipeline();
+    }
+
+    /// <summary>
+    /// Asynchronously sends a notification to all registered handlers for the notification type.
+    /// </summary>
+    /// <typeparam name="TNotification"></typeparam>
+    /// <param name="notification"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentNullException"></exception>
+    /// <exception cref="InvalidOperationException"></exception>
+    public Task PublishAsync<TNotification>(TNotification notification, CancellationToken cancellationToken = default) where TNotification : INotification
+    {
+        if (notification == null)
+            throw new ArgumentNullException(nameof(notification));
+
+        var notificationType = notification.GetType();
+        var (handlerType, handlerMethod) = _notificationCache.GetOrAdd(notificationType, t =>
+        {
+            var hType = typeof(INotificationHandler<>).MakeGenericType(t);
+            var hMethod = hType.GetMethod("HandleAsync") ?? throw new InvalidOperationException($"HandleAsync not found on {hType}");
+
+            return (hType, hMethod);
+        });
+
+        var handlers = _serviceProvider.GetServices(handlerType).ToList();
+
+        var tasks = handlers.Select(handler => (Task)handlerMethod.Invoke(handler, [notification, cancellationToken])!);
+
+        return Task.WhenAll(tasks);
     }
 }

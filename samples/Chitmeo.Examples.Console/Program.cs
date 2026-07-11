@@ -13,4 +13,5 @@ var provider = services.BuildServiceProvider();
 
 var mediator = provider.GetRequiredService<IMediator>();
 await mediator.SendAsync(new HelloRequest());
+await mediator.PublishAsync(new HelloNotification { Message = "Hello from notification" });
 
