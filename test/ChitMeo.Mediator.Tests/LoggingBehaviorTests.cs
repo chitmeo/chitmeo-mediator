@@ -1,5 +1,3 @@
-using System;
-
 namespace ChitMeo.Mediator.Tests;
 
 public class LoggingBehaviorTests
