@@ -6,8 +6,8 @@
 		<Nullable>enable</Nullable>
 		<PackageId>ChitMeo.Mediator</PackageId>
 		<Version>1.2.0</Version>
-		<Authors>Dev</Authors>
-		<Company>ChitMeo</Company>
+		<Authors>chitmeo</Authors>
+        <Company>chitmeo</Company>
 		<Copyright>Copyright ChitMeo.com</Copyright>
 		<Description>Simple mediator for modular .NET applications.</Description>
 		<PackageReadmeFile>README.md</PackageReadmeFile>

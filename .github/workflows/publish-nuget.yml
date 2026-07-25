@@ -5,6 +5,14 @@ on:
     tags:
       - 'v*.*.*'
 
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'NuGet package version'
+        required: true
+        type: string
+        default: '1.2.0'
+
 permissions:
   id-token: write
   contents: read
@@ -12,16 +20,10 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
-
-      - name: Verify workflow version
-        run: |
-          echo "Running NEW NuGet publish workflow"
-          echo "Workflow: ${{ github.workflow }}"
-          echo "Branch: ${{ github.ref_name }}"
-          echo "Ref type: ${{ github.ref_type }}"
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
@@ -34,28 +36,48 @@ jobs:
         id: version
         shell: bash
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="${{ inputs.version }}"
+          fi
+
           echo "Package version: $VERSION"
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Restore dependencies
         run: dotnet restore
 
       - name: Build project
-        run: dotnet build -c Release --no-restore
+        run: dotnet build \
+          src/ChitMeo.Mediator/ChitMeo.Mediator.csproj \
+          -c Release \
+          --no-restore
 
       - name: Pack NuGet package
+        shell: bash
         run: |
+          mkdir -p ./artifacts
+
           dotnet pack \
+            src/ChitMeo.Mediator/ChitMeo.Mediator.csproj \
             -c Release \
             --no-build \
             -o ./artifacts \
-            -p:PackageVersion=${{ steps.version.outputs.VERSION }}
+            -p:PackageVersion="${{ steps.version.outputs.VERSION }}"
 
-      - name: List generated packages
+      - name: Verify generated package
+        shell: bash
         run: |
           echo "Generated packages:"
           ls -lah ./artifacts
+
+          PACKAGE_COUNT=$(find ./artifacts -maxdepth 1 -type f -name "*.nupkg" | wc -l)
+
+          if [ "$PACKAGE_COUNT" -eq 0 ]; then
+            echo "No NuGet package was generated."
+            exit 1
+          fi
 
       - name: NuGet login
         uses: NuGet/login@v1
@@ -68,18 +90,13 @@ jobs:
         run: |
           if [ -z "${{ steps.login.outputs.NUGET_API_KEY }}" ]; then
             echo "NuGet API key was not generated."
-            echo "Please check:"
-            echo "1. NUGET_USER GitHub Secret"
-            echo "2. NuGet Trusted Publishing Policy"
-            echo "3. Repository owner"
-            echo "4. Repository name"
-            echo "5. Workflow file name"
             exit 1
           fi
 
           echo "NuGet login succeeded."
 
       - name: Push package to NuGet.org
+        shell: bash
         run: |
           dotnet nuget push "./artifacts/*.nupkg" \
             --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" \
