@@ -49,22 +49,10 @@ jobs:
         run: dotnet restore
 
       - name: Build project
-        run: dotnet build \
-          src/ChitMeo.Mediator/ChitMeo.Mediator.csproj \
-          -c Release \
-          --no-restore
+        run: dotnet build src/ChitMeo.Mediator/ChitMeo.Mediator.csproj -c Release --no-restore
 
       - name: Pack NuGet package
-        shell: bash
-        run: |
-          mkdir -p ./artifacts
-
-          dotnet pack \
-            src/ChitMeo.Mediator/ChitMeo.Mediator.csproj \
-            -c Release \
-            --no-build \
-            -o ./artifacts \
-            -p:PackageVersion="${{ steps.version.outputs.VERSION }}"
+        run: dotnet pack src/ChitMeo.Mediator/ChitMeo.Mediator.csproj -c Release --no-build -o ./artifacts -p:PackageVersion=${{ steps.version.outputs.VERSION }}
 
       - name: Verify generated package
         shell: bash
@@ -96,8 +84,4 @@ jobs:
           echo "NuGet login succeeded."
 
       - name: Push package to NuGet.org
-        shell: bash
-        run: |
-          dotnet nuget push "./artifacts/*.nupkg" \
-            --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" \
-            --source "https://api.nuget.org/v3/index.json"
+        run: dotnet nuget push "./artifacts/*.nupkg" --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source "https://api.nuget.org/v3/index.json"
