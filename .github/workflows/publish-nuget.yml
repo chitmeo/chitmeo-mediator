@@ -1,0 +1,86 @@
+name: Publish to NuGet
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Verify workflow version
+        run: |
+          echo "Running NEW NuGet publish workflow"
+          echo "Workflow: ${{ github.workflow }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Ref type: ${{ github.ref_type }}"
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.0.x
+            10.0.x
+
+      - name: Get package version
+        id: version
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Package version: $VERSION"
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build project
+        run: dotnet build -c Release --no-restore
+
+      - name: Pack NuGet package
+        run: |
+          dotnet pack \
+            -c Release \
+            --no-build \
+            -o ./artifacts \
+            -p:PackageVersion=${{ steps.version.outputs.VERSION }}
+
+      - name: List generated packages
+        run: |
+          echo "Generated packages:"
+          ls -lah ./artifacts
+
+      - name: NuGet login
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: Verify NuGet login
+        shell: bash
+        run: |
+          if [ -z "${{ steps.login.outputs.NUGET_API_KEY }}" ]; then
+            echo "NuGet API key was not generated."
+            echo "Please check:"
+            echo "1. NUGET_USER GitHub Secret"
+            echo "2. NuGet Trusted Publishing Policy"
+            echo "3. Repository owner"
+            echo "4. Repository name"
+            echo "5. Workflow file name"
+            exit 1
+          fi
+
+          echo "NuGet login succeeded."
+
+      - name: Push package to NuGet.org
+        run: |
+          dotnet nuget push "./artifacts/*.nupkg" \
+            --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" \
+            --source "https://api.nuget.org/v3/index.json"
