@@ -5,17 +5,9 @@ on:
     tags:
       - 'v*.*.*'
 
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'NuGet package version'
-        required: true
-        type: string
-        default: '1.2.0'
-
 permissions:
   id-token: write
-  contents: read
+  contents: write
 
 jobs:
   publish:
@@ -36,11 +28,7 @@ jobs:
         id: version
         shell: bash
         run: |
-          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
-            VERSION="${GITHUB_REF_NAME#v}"
-          else
-            VERSION="${{ inputs.version }}"
-          fi
+          VERSION="${GITHUB_REF_NAME#v}"
 
           echo "Package version: $VERSION"
           echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
@@ -85,3 +73,11 @@ jobs:
 
       - name: Push package to NuGet.org
         run: dotnet nuget push "./artifacts/*.nupkg" --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source "https://api.nuget.org/v3/index.json"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: ./artifacts/*.nupkg
